@@ -1,0 +1,115 @@
+# LunarShop Configuration Template
+# Este é um exemplo de configuração para o plugin LunarShop.
+# Configure itens, preços, moedas, promoções e muito mais!
+
+items:
+  iron_axe:
+    material: IRON_AXE                # Tipo de material (Minecraft Material Enum)
+    name: Machado de Ferro            # Nome do item (visível no jogo)
+    lore:                             # Descrição (lore) do item
+      - Um machado muito afiado
+      - Use para lenhar com destreza!
+    price:
+      buy: 40                         # Preço para compra (valor positivo)
+      sell: 25                        # Preço para venda (valor positivo)
+    stock: 10                         # Estoque inicial do item
+    unique: false                     # Se o item é único (não pode ser empilhado)
+    sellable: true                    # Se o item pode ser vendido pelo jogador
+    currency: solar                   # Moeda usada para o item (solar ou lunar)
+
+  stone_axe:
+    material: STONE_AXE
+    name: Machado de Pedra
+    lore:
+      - Um machado comum de pedra
+      - Use para lenhar como nunca!
+    price:
+      buy: 10
+      sell: 2
+    stock: 4
+    unique: true                      # Este item é único
+    sellable: true
+    currency: lunar                   # Usando moeda Lunar
+
+  stone_pickaxe:
+    material: STONE_PICKAXE
+    name: Picareta de Pedra
+    price:
+      buy: 100
+      sell: 20
+    stock: 3
+    unique: true
+    sellable: true
+    enchantments:                     # Encantamentos do item
+      efficiency: 1                   # Eficiência I
+    currency: solar
+
+  enchanted_sword:
+    material: DIAMOND_SWORD
+    name: §bEspada dos Deuses         # Nome do item com cor (uso de códigos de cor Minecraft)
+    lore:
+      - §fUma espada lendária forjada pelos deuses.
+      - §7Capaz de cortar até o destino.
+      - §6[Encantamentos]
+      - §7Afiação V
+      - §7Inquebrável III
+      - §7Aspecto Flamejante II
+    price:
+      buy: 1500
+      sell: 750
+    stock: 9
+    unique: true
+    sellable: true
+    currency: lunar
+    enchantments:
+      sharpness: 5                    # Afiação V
+      unbreaking: 3                   # Inquebrável III
+      fire_aspect: 2                  # Aspecto Flamejante II
+    promotion:                        # Configuração de promoção para o item
+      enabled: true                   # Se a promoção está ativa
+      discount_percentage: 20         # Porcentagem de desconto
+      start_day: 5000                 # Dia do Minecraft em que a promoção começa
+      duration_days_minecraft: 7      # Duração da promoção (em dias do Minecraft)
+
+  enchanted_book_1:
+    material: ENCHANTED_BOOK
+    name: Livro dos Deuses
+    lore:
+      - §6[Encantamentos]
+      - §7Eficiência V
+      - §7Inquebrável III
+      - §7Remendo
+    price:
+      buy: 1500.0
+      sell: 500.0
+    stock: 9
+    unique: true
+    sellable: false                   # Este item não pode ser vendido pelo jogador
+    currency: lunar
+    enchantments:
+      unbreaking: 3                   # Inquebrável III
+      efficiency: 5                   # Eficiência V
+      mending: 1                      # Remendo I
+    promotion:
+      enabled: true
+      discount_percentage: 15
+      start_day: 7000
+      duration_days_minecraft: 10
+
+# Documentação para parâmetros:
+# - material: O material base do item (https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Material.html)
+# - name: Nome personalizado do item.
+# - lore: Descrição adicional do item (pode incluir formatação de cores usando §).
+# - price:
+#   - buy: Preço para comprar o item na loja.
+#   - sell: Preço para vender o item para a loja.
+# - stock: Quantidade inicial disponível no estoque da loja.
+# - unique: Define se o item é único (não pode ser empilhado).
+# - sellable: Define se o jogador pode vender este item de volta para a loja.
+# - currency: Define a moeda usada no item (solar ou lunar).
+# - enchantments: Encantamentos aplicados ao item.
+# - promotion:
+#   - enabled: Define se a promoção está ativa.
+#   - discount_percentage: Porcentagem de desconto aplicada ao preço.
+#   - start_day: Dia do Minecraft em que a promoção começa.
+#   - duration_days_minecraft: Duração da promoção em dias do Minecraft.
