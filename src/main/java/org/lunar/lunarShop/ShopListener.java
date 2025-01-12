@@ -16,6 +16,9 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -182,7 +185,31 @@ public class ShopListener implements Listener {
         }
 
         ItemStack itemToGive = new ItemStack(material, quantityToBuy);
-        if (material == Material.ENCHANTED_BOOK) {
+
+        if (material == Material.POTION || material == Material.SPLASH_POTION
+                || material == Material.LINGERING_POTION) {
+            // Configura poções
+            PotionMeta meta = (PotionMeta) itemToGive.getItemMeta();
+            if (meta != null) {
+                String effectType = shopConfig.getString("items." + key + ".potion_effect.type", "SPEED");
+                int duration = shopConfig.getInt("items." + key + ".potion_effect.duration", 600);
+                int amplifier = shopConfig.getInt("items." + key + ".potion_effect.amplifier", 1);
+
+                PotionEffectType potionEffectType = PotionEffectType.getByName(effectType.toUpperCase());
+                if (potionEffectType != null) {
+                    meta.addCustomEffect(new PotionEffect(potionEffectType, duration, amplifier - 1), true);
+                    meta.displayName(Component.text("§a" + itemName));
+                    meta.lore(loreConfig.stream()
+                            .filter(line -> !line.startsWith("§7Estoque:")) // Remove a linha de estoque
+                            .map(Component::text)
+                            .toList());
+                    itemToGive.setItemMeta(meta);
+                } else {
+                    player.sendMessage("§cErro ao comprar: Tipo de efeito de poção inválido!");
+                    return;
+                }
+            }
+        } else if (material == Material.ENCHANTED_BOOK) {
             // Aplica encantamentos ao livro encantado
             EnchantmentStorageMeta meta = (EnchantmentStorageMeta) itemToGive.getItemMeta();
             if (meta != null) {
@@ -277,9 +304,35 @@ public class ShopListener implements Listener {
             int quantityToSell = isShiftClick ? Math.min(itemStack.getAmount(), 64) : 1;
             double totalSellPrice = sellPrice * quantityToSell;
 
-            // Valida itens únicos
-            if (isUnique) {
-                ItemMeta meta = itemStack.getItemMeta();
+            ItemMeta meta = itemStack.getItemMeta();
+
+            // Validação específica para poções
+            if (itemStack.getType() == Material.POTION || itemStack.getType() == Material.SPLASH_POTION
+                    || itemStack.getType() == Material.LINGERING_POTION) {
+                if (meta instanceof PotionMeta potionMeta) {
+                    String effectType = shopConfig.getString("items." + key + ".potion_effect.type", "SPEED");
+                    int duration = shopConfig.getInt("items." + key + ".potion_effect.duration", 600);
+                    int amplifier = shopConfig.getInt("items." + key + ".potion_effect.amplifier", 1);
+
+                    PotionEffectType potionEffectType = PotionEffectType.getByName(effectType.toUpperCase());
+                    if (potionEffectType == null) {
+                        player.sendMessage("§cTipo de efeito da poção inválido configurado para venda!");
+                        continue;
+                    }
+
+                    // Valida os efeitos da poção no item
+                    boolean validPotion = potionMeta.getCustomEffects().stream()
+                            .anyMatch(effect -> effect.getType().equals(potionEffectType)
+                                    && effect.getAmplifier() == amplifier - 1
+                                    && effect.getDuration() >= duration);
+
+                    if (!validPotion) {
+                        player.sendMessage("§cOs efeitos da poção não correspondem ao esperado!");
+                        return;
+                    }
+                }
+            } else if (isUnique) {
+                // Valida itens únicos
                 if (meta != null) {
                     String itemName = meta.hasDisplayName()
                             ? Optional.ofNullable(meta.displayName())
@@ -304,7 +357,6 @@ public class ShopListener implements Listener {
             }
 
             // Valida os encantamentos
-            ItemMeta meta = itemStack.getItemMeta();
             if (meta != null) {
                 for (Map.Entry<Enchantment, Integer> entry : expectedEnchants.entrySet()) {
                     if (!meta.hasEnchant(entry.getKey()) || meta.getEnchantLevel(entry.getKey()) != entry.getValue()) {
@@ -413,6 +465,24 @@ public class ShopListener implements Listener {
 
                         if (stock >= 0)
                             lore.add("§7Estoque: §e" + stock);
+
+                        // Configuração adicional para poções
+                        if (material == Material.POTION || material == Material.SPLASH_POTION
+                                || material == Material.LINGERING_POTION) {
+                            String effectType = shopConfig.getString("items." + key + ".potion_effect.type", "SPEED");
+                            int duration = shopConfig.getInt("items." + key + ".potion_effect.duration", 600);
+                            int amplifier = shopConfig.getInt("items." + key + ".potion_effect.amplifier", 1);
+
+                            PotionEffectType potionEffectType = PotionEffectType.getByName(effectType.toUpperCase());
+                            if (potionEffectType != null) {
+                                lore.add("§7Efeitos da Poção:");
+                                lore.add("§a" + potionEffectType.getName() + " §7Nível: §e" + amplifier);
+                                lore.add("§7Duração: §e" + (duration / 20) + "s");
+                            } else {
+                                plugin.getLogger()
+                                        .warning("Tipo de efeito inválido encontrado para poção: " + effectType);
+                            }
+                        }
 
                         // Adiciona instruções da loja
                         lore.add("");

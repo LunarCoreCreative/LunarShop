@@ -11,6 +11,9 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,44 +36,32 @@ public class ShopGUI {
         // Adiciona itens à loja
         shopConfig.getConfigurationSection("items").getKeys(false).forEach(key -> {
             try {
-                // Obtém informações do item do arquivo de configuração
                 String materialName = shopConfig.getString("items." + key + ".material", "STONE");
                 Material material = Material.valueOf(materialName.toUpperCase());
                 String itemName = shopConfig.getString("items." + key + ".name", "Item");
                 List<String> loreConfig = shopConfig.getStringList("items." + key + ".lore");
                 double buyPrice = shopConfig.getDouble("items." + key + ".price.buy", -1);
                 double sellPrice = shopConfig.getDouble("items." + key + ".price.sell", -1);
-                int stock = shopConfig.getInt("items." + key + ".stock", -1); // Estoque do item
-
-                // Obtém a moeda configurada ou usa 'lunar' como padrão
+                int stock = shopConfig.getInt("items." + key + ".stock", -1);
                 String currency = shopConfig.getString("items." + key + ".currency", "lunar");
 
-                // Verifica se há promoção
                 boolean isPromotion = shopConfig.getBoolean("items." + key + ".promotion.enabled", false);
                 double discountPercentage = shopConfig.getDouble("items." + key + ".promotion.discount_percentage", 0);
-                int promotionStartDay = shopConfig.getInt("items." + key + ".promotion.start_day", -1);
-                int promotionDurationDays = shopConfig.getInt("items." + key + ".promotion.duration_days_minecraft", 0);
+                double discountedPrice = isPromotion ? buyPrice - (buyPrice * discountPercentage / 100) : buyPrice;
 
-                // Calcula o preço com desconto, se houver promoção
-                double discountedPrice = buyPrice;
-                if (isPromotion) {
-                    discountedPrice = buyPrice - (buyPrice * discountPercentage / 100);
-                }
-
-                // Obtém os encantamentos configurados, se existirem
                 Map<String, Object> enchantments = shopConfig
                         .getConfigurationSection("items." + key + ".enchantments") != null
                                 ? shopConfig.getConfigurationSection("items." + key + ".enchantments").getValues(false)
                                 : null;
 
-                // Cria o item da loja
                 ItemStack item = new ItemStack(material);
                 ItemMeta meta = item.getItemMeta();
+
                 if (meta != null) {
                     meta.displayName(Component.text("§a" + itemName));
-
-                    // Configura a lore com preço de compra, venda e estoque
                     List<String> lore = new ArrayList<>(loreConfig);
+
+                    // Adiciona informações de promoção
                     if (isPromotion) {
                         lore.add("§6[Promoção Ativa]");
                         lore.add(String.format("§7Preço original: %s§b%.2f %s",
@@ -79,23 +70,43 @@ public class ShopGUI {
                         lore.add(String.format("§7Preço promocional: %s§b%.2f %s",
                                 getCurrencySymbol(currency), discountedPrice,
                                 getCurrencyColor(currency) + capitalize(currency)));
-                        lore.add(String.format("§7Duração: §e%d dias de Minecraft", promotionDurationDays));
                     } else if (buyPrice > 0) {
                         lore.add(String.format("§7Preço de compra: %s§b%.2f %s",
                                 getCurrencySymbol(currency), buyPrice,
                                 getCurrencyColor(currency) + capitalize(currency)));
                     }
+
                     if (sellPrice > 0) {
                         lore.add(String.format("§7Preço de venda: %s§b%.2f %s",
                                 getCurrencySymbol(currency), sellPrice,
                                 getCurrencyColor(currency) + capitalize(currency)));
                     }
+
                     if (stock >= 0) {
-                        lore.add("§7Estoque: §e" + stock); // Mostra o estoque apenas na loja
+                        lore.add("§7Estoque: §e" + stock);
                     }
+
+                    // Configuração adicional para poções
+                    if (meta instanceof PotionMeta potionMeta) {
+                        String effectType = shopConfig.getString("items." + key + ".potion_effect.type", "SPEED");
+                        int duration = shopConfig.getInt("items." + key + ".potion_effect.duration", 600);
+                        int amplifier = shopConfig.getInt("items." + key + ".potion_effect.amplifier", 1);
+
+                        PotionEffectType potionEffectType = PotionEffectType.getByName(effectType.toUpperCase());
+                        if (potionEffectType != null) {
+                            lore.add("§7Efeitos da Poção:");
+                            lore.add("§a" + potionEffectType.getName() + " §7Nível: §e" + amplifier);
+                            lore.add("§7Duração: §e" + (duration / 20) + "s");
+
+                            potionMeta.addCustomEffect(new PotionEffect(potionEffectType, duration, amplifier - 1),
+                                    true);
+                        } else {
+                            Bukkit.getLogger().warning("Tipo de efeito inválido: " + effectType);
+                        }
+                    }
+
                     meta.lore(lore.stream().map(Component::text).toList());
 
-                    // Aplica encantamentos se existirem no YML
                     if (enchantments != null) {
                         enchantments.forEach((enchantName, level) -> {
                             NamespacedKey enchantKey = NamespacedKey.minecraft(enchantName.toLowerCase());
@@ -106,17 +117,13 @@ public class ShopGUI {
                                 Bukkit.getLogger().warning("Encantamento inválido: " + enchantName);
                             }
                         });
-                    }
-
-                    // Esconde a descrição dos encantamentos na lore
-                    if (enchantments != null && !enchantments.isEmpty()) {
                         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
                     }
+
                     item.setItemMeta(meta);
                 }
                 inventory.addItem(item);
             } catch (IllegalArgumentException e) {
-                // Trata erros de configuração incorreta
                 Bukkit.getLogger()
                         .warning("Erro ao carregar item '" + key + "' na loja '" + shopName + "': " + e.getMessage());
             }
@@ -127,32 +134,23 @@ public class ShopGUI {
         return inventory;
     }
 
-    // Função auxiliar para capitalizar o nome da moeda
     private String capitalize(String currency) {
         if (currency == null || currency.isEmpty())
             return "";
         return currency.substring(0, 1).toUpperCase() + currency.substring(1).toLowerCase();
     }
 
-    // Função auxiliar para obter a cor da moeda
     private String getCurrencyColor(String currency) {
-        switch (currency.toLowerCase()) {
-            case "solar":
-                return "§e"; // Amarelo para Solar
-            case "lunar":
-            default:
-                return "§b"; // Azul para Lunar
-        }
+        return switch (currency.toLowerCase()) {
+            case "solar" -> "§e"; // Amarelo para Solar
+            default -> "§b"; // Azul para Lunar
+        };
     }
 
-    // Função auxiliar para obter o símbolo da moeda
     private String getCurrencySymbol(String currency) {
-        switch (currency.toLowerCase()) {
-            case "solar":
-                return "§e☀ "; // Símbolo do Solar em amarelo
-            case "lunar":
-            default:
-                return "§b₪ "; // Símbolo do Lunar em azul
-        }
+        return switch (currency.toLowerCase()) {
+            case "solar" -> "§e☀ "; // Símbolo do Solar
+            default -> "§b₪ "; // Símbolo do Lunar
+        };
     }
 }

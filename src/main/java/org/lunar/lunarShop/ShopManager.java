@@ -1,7 +1,10 @@
 package org.lunar.lunarShop;
 
+import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.potion.PotionEffectType;
 import org.lunar.lunarEconomy.LunarEconomyAPI;
 
 import java.io.File;
@@ -30,9 +33,10 @@ public class ShopManager {
         // Carrega as lojas
         loadShops();
     }
+
     public void reloadShops() {
         shops.clear(); // Limpa as lojas existentes
-        loadShops();   // Recarrega as lojas a partir dos arquivos
+        loadShops(); // Recarrega as lojas a partir dos arquivos
         plugin.getLogger().info("Lojas recarregadas com sucesso!");
     }
 
@@ -55,6 +59,32 @@ public class ShopManager {
 
         for (File shopFile : shopFiles) {
             FileConfiguration shopConfig = YamlConfiguration.loadConfiguration(shopFile);
+
+            // Validações adicionais para poções
+            ConfigurationSection itemsSection = shopConfig.getConfigurationSection("items");
+            if (itemsSection != null) {
+                for (String key : itemsSection.getKeys(false)) {
+                    String materialName = shopConfig.getString("items." + key + ".material", "STONE").toUpperCase();
+                    Material material = Material.matchMaterial(materialName);
+
+                    if (material == Material.POTION || material == Material.SPLASH_POTION
+                            || material == Material.LINGERING_POTION) {
+                        String effectType = shopConfig.getString("items." + key + ".potion_effect.type", "SPEED");
+                        int duration = shopConfig.getInt("items." + key + ".potion_effect.duration", 600);
+                        int amplifier = shopConfig.getInt("items." + key + ".potion_effect.amplifier", 1);
+
+                        PotionEffectType potionEffectType = PotionEffectType.getByName(effectType.toUpperCase());
+                        if (potionEffectType == null) {
+                            plugin.getLogger().warning("Tipo de efeito inválido para poção: " + effectType
+                                    + " na loja: " + shopFile.getName());
+                            continue;
+                        }
+
+                        shopConfig.set("items." + key + ".potion_effect.parsed_type", potionEffectType.getName());
+                    }
+                }
+            }
+
             shops.put(shopFile.getName().replace(".yml", ""), shopConfig);
             plugin.getLogger().info("Loja carregada: " + shopFile.getName());
         }
