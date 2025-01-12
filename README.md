@@ -1,7 +1,6 @@
-
 # LunarShop
 
-LunarShop é um plugin avançado de lojas para servidores Minecraft. Ele oferece suporte a moedas customizadas (**lunar** e **solar**), promoções configuráveis, itens encantados, e diversas opções para personalização de cada item.
+LunarShop é um plugin avançado de lojas para servidores Minecraft. Ele oferece suporte a moedas customizadas (**lunar** e **solar**), promoções configuráveis, itens encantados, poções, e diversas opções para personalização de cada item.
 
 ---
 
@@ -11,9 +10,9 @@ LunarShop é um plugin avançado de lojas para servidores Minecraft. Ele oferece
   - Suporte às moedas **lunar** e **solar**.
   - Integração com o **[LunarEconomy](https://github.com/seu-repositorio/LunarEconomy)**.
 - **Itens Personalizados**:
-  - Suporte a **itens únicos** e **não únicos**.
+  - Suporte a **itens únicos**, **não únicos**, **poções**, e **itens encantados**.
   - Configuração de estoque e controle de venda.
-  - Itens encantados e livros encantados.
+  - Suporte completo para livros encantados e poções customizadas.
 - **Promoções Configuráveis**:
   - Desconto em porcentagem.
   - Duração configurável em dias do Minecraft.
@@ -40,7 +39,7 @@ LunarShop é um plugin avançado de lojas para servidores Minecraft. Ele oferece
 
 ## ⚙️ Configuração
 
-Os arquivos de configuração das lojas são armazenados em `plugins/LunarShop/shops/`. Cada loja tem seu próprio arquivo **YAML**, onde você pode configurar itens, preços, encantamentos, promoções e mais.
+Os arquivos de configuração das lojas são armazenados em `plugins/LunarShop/shops/`. Cada loja tem seu próprio arquivo **YAML**, onde você pode configurar itens, preços, encantamentos, promoções, poções e mais.
 
 ### 📂 Estrutura Geral
 
@@ -61,6 +60,10 @@ items:
     currency: "<lunar ou solar>"
     enchantments:
       <encantamento>: <nível>
+    potion_effect:
+      type: <efeito_da_poção>
+      duration: <duração_em_ticks>
+      amplifier: <nível>
     promotion:
       enabled: <true ou false>
       discount_percentage: <porcentagem>
@@ -73,7 +76,7 @@ items:
 | Campo                     | Descrição                                                                                 |
 |---------------------------|-------------------------------------------------------------------------------------------|
 | **name**                  | Nome do item exibido na loja.                                                            |
-| **material**              | Tipo do item (ex.: `STONE`, `DIAMOND_SWORD`, `ENCHANTED_BOOK`).                          |
+| **material**              | Tipo do item (ex.: `STONE`, `DIAMOND_SWORD`, `ENCHANTED_BOOK`, `POTION`).                 |
 | **lore**                  | Lista de descrições exibidas no item.                                                    |
 | **price.buy**             | Preço para comprar o item.                                                               |
 | **price.sell**            | Preço para vender o item.                                                                |
@@ -82,6 +85,9 @@ items:
 | **sellable**              | Define se o item pode ser vendido pelo jogador.                                           |
 | **currency**              | Moeda usada para o item (`lunar` ou `solar`).                                            |
 | **enchantments**          | Encantamentos aplicados ao item (ex.: `sharpness: 5`, `unbreaking: 3`).                   |
+| **potion_effect.type**    | Tipo do efeito da poção (ex.: `SPEED`, `HEAL`, `STRENGTH`).                               |
+| **potion_effect.duration**| Duração do efeito da poção em ticks (1 segundo = 20 ticks).                               |
+| **potion_effect.amplifier** | Nível do efeito da poção (`0` para nível I, `1` para nível II, etc.).                    |
 | **promotion.enabled**     | Define se o item está em promoção.                                                       |
 | **promotion.discount_percentage** | Porcentagem de desconto aplicada no preço de compra.                              |
 | **promotion.start_day**   | Dia do Minecraft em que a promoção começa.                                               |
@@ -109,22 +115,25 @@ items:
     currency: solar
 ```
 
-### Item Único
+### Poção Personalizada
 ```yaml
 items:
-  stone_axe:
-    material: STONE_AXE
-    name: Machado de Pedra
+  speed_potion:
+    material: POTION
+    name: Poção de Velocidade
     lore:
-      - Um machado comum de pedra
-      - Use para lenhar como nunca!
+      - §aAumenta sua velocidade por 30 segundos.
     price:
-      buy: 10
-      sell: 2
-    stock: 4
-    unique: true
+      buy: 20
+      sell: 10
+    stock: 50
+    unique: false
     sellable: true
-    currency: solar
+    currency: lunar
+    potion_effect:
+      type: SPEED
+      duration: 600
+      amplifier: 1
 ```
 
 ### Item Encantado
@@ -157,38 +166,9 @@ items:
       duration_days_minecraft: 7
 ```
 
-### Livro Encantado
-```yaml
-items:
-  enchanted_book_1:
-    material: ENCHANTED_BOOK
-    name: Livro dos Deuses
-    lore:
-      - §6[Encantamentos]
-      - §7Eficiência V
-      - §7Inquebrável III
-      - §7Remendo
-    price:
-      buy: 1500.0
-      sell: 500.0
-    stock: 9
-    unique: false
-    sellable: true
-    currency: lunar
-    enchantments:
-      unbreaking: 3
-      efficiency: 5
-      mending: 1
-    promotion:
-      enabled: true
-      discount_percentage: 20
-      start_day: 5000
-      duration_days_minecraft: 7
-```
-
 ---
 
-## 🛠️ Comandos
+## ⚙️ Comandos
 
 ### Principais Comandos
 
@@ -205,7 +185,7 @@ items:
 
 ---
 
-## 🌟 Documentação Técnica
+## 🌈 Documentação Técnica
 
 ### Economia Integrada
 
@@ -217,9 +197,10 @@ O LunarShop utiliza a API de economia do **LunarEconomy** para gerenciar saldos 
 
 ---
 
-## 🌈 Créditos e Contribuições
+## 🌟 Créditos e Contribuições
 
 - **Desenvolvedor Principal**: EthanNoward! 🎉  
 - **API de Economia**: [LunarEconomy](https://github.com/seu-repositorio/LunarEconomy)  
 - **Comunidade Minecraft**: Por sempre ajudar a construir sistemas mais incríveis!
 
+---
