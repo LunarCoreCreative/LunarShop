@@ -1,0 +1,21 @@
+name: LunarShop
+version: '1.0-SNAPSHOT'
+main: org.lunar.lunarShop.LunarShop
+api-version: '1.21'
+depend:
+  - LunarEconomy
+permissions:
+  lunarshop.reload:
+    description: Permissão para recarregar o LunarShop.
+    default: op
+commands:
+  saldo:
+    description: Mostra o saldo do jogador no LunarEconomy.
+    usage: /saldo
+  shop:
+    description: Abre ou gerencia lojas no servidor.
+    usage: /shop abrir <nome_da_loja>
+  lunarshopreload:
+    description: Recarrega o plugin LunarShop.
+    usage: /lunarshopreload
+    permission: lunarshop.reload
